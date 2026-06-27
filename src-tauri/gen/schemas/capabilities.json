@@ -1,1 +1,48 @@
-{"default":{"identifier":"default","description":"Default permissions for Photo Viewer","local":true,"windows":["main"],"permissions":["core:default","core:event:default","core:event:allow-listen","core:event:allow-emit","dialog:default","dialog:allow-open","dialog:allow-save","dialog:allow-message","dialog:allow-ask","dialog:allow-confirm","fs:default","fs:read-all","fs:write-all","fs:allow-read","fs:allow-write","fs:allow-exists","fs:allow-mkdir","fs:allow-remove","fs:allow-rename","fs:allow-copy-file","fs:allow-stat","fs:allow-read-dir","shell:default","shell:allow-open","clipboard-manager:default","clipboard-manager:allow-write-text"]}}
+{
+    "default": {
+        "identifier": "default",
+        "description": "Default permissions for Photo Viewer",
+        "local": true,
+        "windows": [
+            "main"
+        ],
+        "permissions": [
+            "core:default",
+            "core:event:default",
+            "core:event:allow-listen",
+            "core:event:allow-emit",
+            "dialog:default",
+            "dialog:allow-open",
+            "dialog:allow-save",
+            "dialog:allow-message",
+            "dialog:allow-ask",
+            "dialog:allow-confirm",
+            "fs:default",
+            "fs:read-all",
+            "fs:write-all",
+            "fs:allow-read",
+            "fs:allow-write",
+            "fs:allow-exists",
+            "fs:allow-mkdir",
+            "fs:allow-remove",
+            "fs:allow-rename",
+            "fs:allow-copy-file",
+            "fs:allow-stat",
+            "fs:allow-read-dir",
+            "shell:default",
+            "shell:allow-open",
+            "clipboard-manager:default",
+            "clipboard-manager:allow-write-text",
+            "core:window:default",
+            "core:window:allow-minimize",
+            "core:window:allow-unminimize",
+            "core:window:allow-maximize",
+            "core:window:allow-unmaximize",
+            "core:window:allow-close",
+            "core:window:allow-set-decorations",
+            "core:window:allow-toggle-maximize",
+            "core:window:allow-is-maximized",
+            "core:window:allow-start-dragging"
+        ]
+    }
+}

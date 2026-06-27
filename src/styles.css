@@ -170,6 +170,56 @@ html, body {
     height: 16px;
 }
 
+/* ===== Window Controls (Custom Titlebar) ===== */
+.toolbar-btn,
+.window-controls {
+    -webkit-app-region: no-drag;
+}
+
+.window-controls {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.window-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.window-btn:hover {
+    background: var(--bg-subtle-hover);
+}
+
+.window-btn:active {
+    background: var(--bg-subtle-pressed);
+}
+
+.window-btn svg,
+.window-btn i[data-lucide] {
+    width: 16px;
+    height: 16px;
+}
+
+.window-btn-close:hover {
+    background: #C42B1C;
+    color: #FFFFFF;
+}
+
+.window-btn-close:active {
+    background: #B22A1C;
+    color: #FFFFFF;
+}
+
 /* Lucide 图标全局样式 */
 [data-lucide] {
     width: 1em;

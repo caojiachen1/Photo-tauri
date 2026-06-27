@@ -8,7 +8,7 @@
 </head>
 <body>
     <!-- 顶部工具栏 -->
-    <div id="topToolbar" class="toolbar top-toolbar">
+    <div id="topToolbar" class="toolbar top-toolbar" style="-webkit-app-region: drag;">
         <div class="toolbar-left">
             <button id="btnSaveAs" class="toolbar-btn" title="另存为" disabled>
                 <i data-lucide="save-plus"></i>
@@ -47,7 +47,20 @@
         <div class="toolbar-center">
             <span id="fileNameText" class="file-name"></span>
         </div>
-        <div class="toolbar-right"></div>
+        <div class="toolbar-right">
+            <div class="window-controls">
+                <button id="btnMinimize" class="window-btn" title="最小化">
+                    <i data-lucide="minus"></i>
+                </button>
+                <button id="btnMaximize" class="window-btn" title="最大化">
+                    <i data-lucide="square" id="iconMaximize"></i>
+                    <i data-lucide="copy" id="iconRestore" class="hidden"></i>
+                </button>
+                <button id="btnClose" class="window-btn window-btn-close" title="关闭">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- 左导航按钮 -->

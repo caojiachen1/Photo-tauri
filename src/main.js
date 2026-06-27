@@ -1,5 +1,6 @@
 import { invoke, listen, convertFileSrc, formatFileSize, formatTime, getFileExtension, getFileName, getDirectory, isImageFile, isVideoFile, isSupportedFile, debounce } from './utils.js';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
     createIcons,
     SavePlus, Copy, RotateCw, Trash2, MoreHorizontal,
@@ -9,7 +10,7 @@ import {
     LayoutGrid, List, Info,
     Maximize2, Minimize, Maximize,
     ZoomIn, ZoomOut, ChevronUp, X,
-    Image, HardDrive
+    Image, HardDrive, Minus, Square
 } from 'lucide';
 
 createIcons({
@@ -21,7 +22,7 @@ createIcons({
         LayoutGrid, List, Info,
         Maximize2, Minimize, Maximize,
         ZoomIn, ZoomOut, ChevronUp, X,
-        Image, HardDrive
+        Image, HardDrive, Minus, Square
     }
 });
 
@@ -134,6 +135,13 @@ function cacheElements() {
     elements.errorTitle = $('#errorTitle');
     elements.errorMessage = $('#errorMessage');
     elements.btnErrorOk = $('#btnErrorOk');
+
+    // Window controls
+    elements.btnMinimize = $('#btnMinimize');
+    elements.btnMaximize = $('#btnMaximize');
+    elements.btnClose = $('#btnClose');
+    elements.iconMaximize = $('#iconMaximize');
+    elements.iconRestore = $('#iconRestore');
 }
 
 // ===== Initialization =====
@@ -157,6 +165,7 @@ async function init() {
     await setupDragDrop();
     setupKeyboard();
     await setupFileWatcher();
+    updateMaximizeIcon();
 }
 
 // ===== Settings =====
@@ -234,6 +243,18 @@ function setupEventListeners() {
     elements.zoomSlider.addEventListener('input', handleZoomSlider);
     elements.btnZoomIn.addEventListener('click', zoomIn);
     elements.btnFullScreen.addEventListener('click', toggleFullScreen);
+
+    // Window controls
+    elements.btnMinimize.addEventListener('click', handleMinimize);
+    elements.btnMaximize.addEventListener('click', handleToggleMaximize);
+    elements.btnClose.addEventListener('click', handleClose);
+    window.addEventListener('resize', debounce(updateMaximizeIcon, 100));
+
+    // Titlebar double-click to toggle maximize
+    elements.topToolbar.addEventListener('dblclick', async (e) => {
+        if (e.target.closest('.toolbar-btn') || e.target.closest('.window-btn')) return;
+        await handleToggleMaximize();
+    });
 
     // Zoom menu
     elements.zoomMenu.addEventListener('click', handleZoomMenuClick);
@@ -1125,6 +1146,36 @@ function toggleFullScreen() {
     if (state.isImageLoaded && !state.isVideo) {
         requestAnimationFrame(() => fitToWindow());
     }
+}
+
+// ===== Window Controls =====
+async function handleMinimize() {
+    const appWindow = getCurrentWindow();
+    await appWindow.minimize();
+}
+
+async function handleToggleMaximize() {
+    const appWindow = getCurrentWindow();
+    const isMaximized = await appWindow.isMaximized();
+    if (isMaximized) {
+        await appWindow.unmaximize();
+    } else {
+        await appWindow.maximize();
+    }
+    updateMaximizeIcon();
+}
+
+async function handleClose() {
+    const appWindow = getCurrentWindow();
+    await appWindow.close();
+}
+
+async function updateMaximizeIcon() {
+    const appWindow = getCurrentWindow();
+    const isMaximized = await appWindow.isMaximized();
+    elements.iconMaximize.classList.toggle('hidden', isMaximized);
+    elements.iconRestore.classList.toggle('hidden', !isMaximized);
+    elements.btnMaximize.title = isMaximized ? '还原' : '最大化';
 }
 
 // ===== File Operations =====
