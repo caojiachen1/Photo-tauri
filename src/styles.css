@@ -106,7 +106,7 @@ html, body {
 .toolbar-left, .toolbar-right {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     flex-shrink: 0;
 }
 
@@ -138,9 +138,9 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 32px;
-    min-height: 32px;
-    padding: 6px;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 8px;
     background: transparent;
     border: none;
     border-radius: var(--radius-sm);
@@ -176,9 +176,19 @@ html, body {
     -webkit-app-region: no-drag;
 }
 
+.top-toolbar {
+    padding-right: 0;
+}
+
+.top-toolbar .toolbar-right {
+    flex: 0 0 auto;
+    margin-left: auto;
+    align-self: stretch;
+}
+
 .window-controls {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     height: 100%;
 }
 
@@ -187,10 +197,10 @@ html, body {
     align-items: center;
     justify-content: center;
     width: 46px;
-    height: 32px;
+    padding: 0;
     background: transparent;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     color: var(--text-primary);
     cursor: pointer;
     transition: background var(--transition-fast);
