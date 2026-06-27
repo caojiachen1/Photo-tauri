@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <!-- 顶部工具栏 -->
+    <div id="topToolbar" class="toolbar top-toolbar">
+        <div class="toolbar-left">
+            <button id="btnSaveAs" class="toolbar-btn" title="另存为" disabled>
+                <i data-lucide="save-plus"></i>
+            </button>
+            <button id="btnCopy" class="toolbar-btn" title="复制" disabled>
+                <i data-lucide="copy"></i>
+            </button>
+            <button id="btnRotate" class="toolbar-btn" title="旋转" disabled>
+                <i data-lucide="rotate-cw"></i>
+            </button>
+            <button id="btnDelete" class="toolbar-btn" title="删除" disabled>
+                <i data-lucide="trash-2"></i>
+            </button>
+            <div class="toolbar-separator"></div>
+            <button id="btnMore" class="toolbar-btn" title="更多操作" disabled>
+                <i data-lucide="more-horizontal"></i>
+            </button>
+            <!-- 更多操作下拉菜单 -->
+            <div id="moreMenu" class="dropdown-menu hidden">
+                <button id="btnOpenFile" class="menu-item">
+                    <i data-lucide="folder-open"></i>
+                    <span>打开文件</span>
+                </button>
+                <div class="menu-separator"></div>
+                <button id="btnOpenExplorer" class="menu-item">
+                    <i data-lucide="folder-open"></i>
+                    <span>在文件资源管理器中打开</span>
+                </button>
+                <div class="menu-separator"></div>
+                <button id="btnSettings" class="menu-item">
+                    <i data-lucide="settings"></i>
+                    <span>设置</span>
+                </button>
+            </div>
+        </div>
+        <div class="toolbar-center">
+            <span id="fileNameText" class="file-name"></span>
+        </div>
+        <div class="toolbar-right"></div>
+    </div>
+
+    <!-- 左导航按钮 -->
+    <button id="btnPrevious" class="nav-btn" title="上一张" style="left:0;display:none">
+        <i data-lucide="chevron-left"></i>
+    </button>
+
+    <!-- 中间图片/视频显示区域 -->
+    <div id="contentArea" class="content-area">
+        <!-- 图片容器 -->
+        <div id="imageContainer" class="image-container">
+            <div id="imageWrapper" class="image-wrapper">
+                <img id="mainImage" class="main-image hidden" alt="">
+                <canvas id="faceOverlayCanvas" class="face-overlay"></canvas>
+            </div>
+        </div>
+
+        <!-- 视频播放器 -->
+        <div id="videoContainer" class="video-container hidden">
+            <video id="videoPlayer" class="video-player"></video>
+            <div id="videoControls" class="video-controls">
+                <button id="btnPlayPause" class="video-btn" title="播放/暂停">
+                    <i data-lucide="play" id="iconPlay"></i>
+                    <i data-lucide="pause" id="iconPause" class="hidden"></i>
+                </button>
+                <button id="btnRewind" class="video-btn" title="后退10秒">
+                    <i data-lucide="skip-back"></i>
+                </button>
+                <button id="btnForward" class="video-btn" title="前进10秒">
+                    <i data-lucide="skip-forward"></i>
+                </button>
+                <div class="video-seek-container">
+                    <span id="videoCurrentTime" class="video-time">00:00:00</span>
+                    <input id="videoSeekBar" type="range" class="video-seek" min="0" max="1000" value="0">
+                    <span id="videoTotalTime" class="video-time">00:00:00</span>
+                </div>
+                <div class="video-volume-container">
+                    <button id="btnMute" class="video-btn" title="静音">
+                        <i data-lucide="volume-2" id="iconVolume"></i>
+                        <i data-lucide="volume-x" id="iconMuted" class="hidden"></i>
+                    </button>
+                    <input id="volumeSlider" type="range" class="volume-slider" min="0" max="100" value="50">
+                </div>
+                <button id="btnRepeat" class="video-btn" title="循环播放">
+                    <i data-lucide="repeat"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 占位符 -->
+        <div id="placeholderPanel" class="placeholder-panel">
+            <i data-lucide="image" class="placeholder-icon"></i>
+            <span class="placeholder-text">拖放图片到此处或使用文件打开</span>
+        </div>
+
+        <!-- 文件信息面板 -->
+        <div id="fileInfoPanel" class="file-info-panel hidden">
+            <div class="panel-content">
+                <div class="info-group" id="infoFileNameGroup">
+                    <span class="info-label">文件名</span>
+                    <span class="info-value" id="infoFileName"></span>
+                </div>
+                <div class="info-group" id="infoFilePathGroup">
+                    <span class="info-label">位置</span>
+                    <span class="info-value" id="infoFilePath"></span>
+                </div>
+                <div class="info-group" id="infoFileTypeGroup">
+                    <span class="info-label">类型</span>
+                    <span class="info-value" id="infoFileType"></span>
+                </div>
+                <div class="info-group" id="infoDimensionsGroup">
+                    <span class="info-label">尺寸</span>
+                    <span class="info-value" id="infoDimensions"></span>
+                </div>
+                <div class="info-group" id="infoFileSizeGroup">
+                    <span class="info-label">大小</span>
+                    <span class="info-value" id="infoFileSize"></span>
+                </div>
+                <div class="info-group" id="infoCreatedDateGroup">
+                    <span class="info-label">创建日期</span>
+                    <span class="info-value" id="infoCreatedDate"></span>
+                </div>
+                <div class="info-group" id="infoModifiedDateGroup">
+                    <span class="info-label">修改日期</span>
+                    <span class="info-value" id="infoModifiedDate"></span>
+                </div>
+                <div class="info-group hidden" id="infoDateTimeOriginalGroup">
+                    <span class="info-label">拍摄时间</span>
+                    <span class="info-value" id="infoDateTimeOriginal"></span>
+                </div>
+                <div class="info-group hidden" id="infoCameraModelGroup">
+                    <span class="info-label">相机型号</span>
+                    <span class="info-value" id="infoCameraModel"></span>
+                </div>
+                <div class="info-group hidden" id="infoShootingParamsGroup">
+                    <span class="info-label">拍摄参数</span>
+                    <div class="shooting-params">
+                        <span id="infoFNumber"></span>
+                        <span id="infoExposureTime"></span>
+                        <span id="infoISO"></span>
+                        <span id="infoFocalLength"></span>
+                    </div>
+                </div>
+                <div class="info-group hidden" id="infoKeywordsGroup">
+                    <span class="info-label">关键词</span>
+                    <span class="info-value" id="infoKeywords"></span>
+                </div>
+                <div class="info-group hidden" id="infoPeopleGroup">
+                    <span class="info-label">人物</span>
+                    <span class="info-value" id="infoPeople"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 缩略图条 -->
+    <div id="thumbnailBar" class="thumbnail-bar hidden">
+        <div id="thumbnailList" class="thumbnail-list"></div>
+    </div>
+
+    <!-- 底部状态栏 -->
+    <div id="bottomStatusBar" class="toolbar bottom-toolbar">
+        <div class="toolbar-left">
+            <button id="btnThumbnailToggle" class="toolbar-btn" title="显示缩略图">
+                <i data-lucide="layout-grid" id="iconThumbnailShow"></i>
+                <i data-lucide="list" id="iconThumbnailHide" class="hidden"></i>
+            </button>
+            <button id="btnFileInfo" class="toolbar-btn" title="文件信息" disabled>
+                <i data-lucide="info"></i>
+            </button>
+            <div class="status-info">
+                <i data-lucide="image" class="status-icon"></i>
+                <span id="imageDimensions" class="status-text"></span>
+            </div>
+            <div class="status-info">
+                <i data-lucide="hard-drive" class="status-icon"></i>
+                <span id="fileSize" class="status-text"></span>
+            </div>
+        </div>
+        <div class="toolbar-right">
+            <button id="btnRotateBottom" class="toolbar-btn" title="旋转" disabled>
+                <i data-lucide="rotate-cw"></i>
+            </button>
+            <div class="toolbar-divider"></div>
+            <button id="btnFitToWindow" class="toolbar-btn" title="适应窗口" disabled>
+                <i data-lucide="maximize-2"></i>
+            </button>
+            <button id="btnActualSize" class="toolbar-btn" title="实际大小 (1:1)" disabled>
+                <span class="btn-text">1:1</span>
+            </button>
+            <div class="toolbar-divider"></div>
+            <button id="btnZoomDropdown" class="toolbar-btn zoom-dropdown-btn" title="缩放" disabled>
+                <span id="zoomPercentText">100%</span>
+                <i data-lucide="chevron-up" class="zoom-chevron"></i>
+            </button>
+            <!-- 缩放下拉菜单 -->
+            <div id="zoomMenu" class="dropdown-menu zoom-menu hidden">
+                <button class="menu-item" data-action="fitToWindow">适应窗口</button>
+                <button class="menu-item" data-action="actualSize">实际大小 (100%)</button>
+                <div class="menu-separator"></div>
+                <button class="menu-item" data-action="zoom25">25%</button>
+                <button class="menu-item" data-action="zoom50">50%</button>
+                <button class="menu-item" data-action="zoom100">100%</button>
+                <button class="menu-item" data-action="zoom200">200%</button>
+                <button class="menu-item" data-action="zoom400">400%</button>
+            </div>
+            <button id="btnZoomOut" class="toolbar-btn" title="缩小" disabled>
+                <i data-lucide="zoom-out"></i>
+            </button>
+            <input id="zoomSlider" type="range" class="zoom-slider" min="10" max="1000" value="100" disabled>
+            <button id="btnZoomIn" class="toolbar-btn" title="放大" disabled>
+                <i data-lucide="zoom-in"></i>
+            </button>
+            <div class="toolbar-divider"></div>
+            <button id="btnFullScreen" class="toolbar-btn" title="全屏">
+                <i data-lucide="maximize" id="iconFullScreen"></i>
+                <i data-lucide="minimize" id="iconExitFullScreen" class="hidden"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 设置对话框 -->
+    <div id="settingsDialog" class="dialog-overlay hidden">
+        <div class="dialog">
+            <div class="dialog-header">
+                <span class="dialog-title">设置</span>
+                <button id="btnCloseSettings" class="toolbar-btn" title="关闭">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="dialog-content">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">删除前确认</span>
+                        <span class="setting-description">删除文件前显示确认对话框</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="settingConfirmDelete" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">显示人脸</span>
+                        <span class="setting-description">在图片上显示人脸检测区域</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="settingShowFaces" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">硬件加速</span>
+                        <span class="setting-description">视频播放使用硬件加速解码</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="settingHardwareAccel" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button id="btnCancelSettings" class="dialog-btn secondary">取消</button>
+                <button id="btnSaveSettings" class="dialog-btn primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认对话框 -->
+    <div id="confirmDialog" class="dialog-overlay hidden">
+        <div class="dialog confirm-dialog">
+            <div class="dialog-content">
+                <p id="confirmMessage" class="confirm-message"></p>
+            </div>
+            <div class="dialog-footer">
+                <button id="btnConfirmCancel" class="dialog-btn secondary">取消</button>
+                <button id="btnConfirmOk" class="dialog-btn primary">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 错误对话框 -->
+    <div id="errorDialog" class="dialog-overlay hidden">
+        <div class="dialog error-dialog">
+            <div class="dialog-content">
+                <h3 id="errorTitle" class="error-title"></h3>
+                <p id="errorMessage" class="error-message"></p>
+            </div>
+            <div class="dialog-footer">
+                <button id="btnErrorOk" class="dialog-btn primary">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+</body>
+</html>
