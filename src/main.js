@@ -923,6 +923,13 @@ function updateThumbnails() {
     spacer.className = 'thumb-spacer';
     elements.thumbnailList.appendChild(spacer);
 
+    // Scroll to center on current image (only when bar is visible, otherwise clientWidth is 0)
+    if (state.currentIndex >= 0 && state.isThumbnailBarVisible) {
+        const viewWidth = elements.thumbnailList.clientWidth;
+        const centerOffset = state.currentIndex * THUMB_STRIDE + THUMB_SIZE / 2 - viewWidth / 2;
+        elements.thumbnailList.scrollLeft = Math.max(0, centerOffset);
+    }
+
     renderVisibleThumbnails();
 
     state._thumbScrollHandler = () => renderVisibleThumbnails();
@@ -1006,18 +1013,21 @@ function drainThumbQueue() {
     _processThumbQueue();
 }
 
+function yieldToMain() {
+    return new Promise(resolve => setTimeout(resolve, 0));
+}
+
 async function _processThumbQueue() {
-    const CONCURRENCY = 3;
+    const CONCURRENCY = 5;
     while (state._thumbLoadQueue.length > 0) {
         const batch = state._thumbLoadQueue.splice(0, CONCURRENCY);
-        await Promise.all(batch.map(async (idx) => {
+        await Promise.allSettled(batch.map(async (idx) => {
             const item = state.thumbnailItems[idx];
             if (!item || item.loaded) return;
             try {
-                // 检查缓存
                 let b64 = state.thumbnailCache.get(item.path);
                 if (!b64) {
-                    b64 = await invoke('get_thumbnail', { path: item.path, size: THUMB_SIZE });
+                    b64 = await invoke('get_thumbnail', { path: item.path, size: THUMB_SIZE * 2 });
                     state.thumbnailCache.set(item.path, b64);
                 }
                 if (state.thumbnailItems[idx] && state.thumbnailItems[idx].element) {
@@ -1035,23 +1045,20 @@ async function _processThumbQueue() {
                 }
             }
         }));
+        // Yield to main thread between batches so UI stays responsive
+        if (state._thumbLoadQueue.length > 0) {
+            await yieldToMain();
+        }
     }
     state._thumbLoading = false;
 }
 
 function updateThumbnailSelection() {
-    // Update selection for rendered items
     state.thumbnailItems.forEach(item => {
         if (item && item.element) {
             item.element.classList.toggle('selected', item.path === state.currentFile);
         }
     });
-
-    // Scroll to selected
-    const selected = elements.thumbnailList.querySelector('.thumbnail-item.selected');
-    if (selected) {
-        selected.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
 }
 
 // ===== Toolbar State =====
@@ -1110,13 +1117,21 @@ function toggleThumbnailBar() {
     elements.btnThumbnailToggle.title = state.isThumbnailBarVisible ? '隐藏缩略图' : '显示缩略图';
 
     // 调整内容区和导航按钮的底部位置
-    const bottom = state.isThumbnailBarVisible ? '136px' : '48px';
+    const bottom = state.isThumbnailBarVisible ? '142px' : '48px';
     elements.contentArea.style.bottom = bottom;
     elements.btnPrevious.style.bottom = bottom;
     elements.btnNext.style.bottom = bottom;
 
     if (state.isThumbnailBarVisible) {
-        updateThumbnailSelection();
+        // Wait for layout, then scroll to center instantly
+        requestAnimationFrame(() => {
+            if (state.currentIndex >= 0 && state.folderFiles.length > 0) {
+                const viewWidth = elements.thumbnailList.clientWidth;
+                const centerOffset = state.currentIndex * THUMB_STRIDE + THUMB_SIZE / 2 - viewWidth / 2;
+                elements.thumbnailList.scrollLeft = Math.max(0, centerOffset);
+            }
+            updateThumbnailSelection();
+        });
     }
 
     // Re-fit image after layout change
@@ -1140,7 +1155,7 @@ function toggleFullScreen() {
     elements.btnFullScreen.title = state.isFullScreen ? '退出全屏' : '全屏';
 
     const top = state.isFullScreen ? '0' : '48px';
-    const bottom = state.isFullScreen ? '0' : (state.isThumbnailBarVisible ? '136px' : '48px');
+    const bottom = state.isFullScreen ? '0' : (state.isThumbnailBarVisible ? '142px' : '48px');
     elements.contentArea.style.top = top;
     elements.contentArea.style.bottom = bottom;
     elements.btnPrevious.style.top = top;

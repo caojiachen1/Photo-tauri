@@ -10,11 +10,12 @@ pub fn generate_thumbnail(path: &Path, max_size: u32) -> Result<String, String> 
     let new_width = (width as f64 * ratio).max(1.0) as u32;
     let new_height = (height as f64 * ratio).max(1.0) as u32;
 
-    // Use Nearest filter for speed (Triangle is slow for large images)
-    let thumbnail = img.resize(new_width, new_height, FilterType::Nearest);
+    let thumbnail = img.resize(new_width, new_height, FilterType::Triangle);
 
     let mut buf: Vec<u8> = Vec::new();
-    thumbnail.write_to(&mut std::io::Cursor::new(&mut buf), image::ImageFormat::Jpeg)
+    let mut cursor = std::io::Cursor::new(&mut buf);
+    let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut cursor, 85);
+    thumbnail.write_with_encoder(encoder)
         .map_err(|e| format!("Failed to encode thumbnail: {}", e))?;
 
     use base64::Engine;

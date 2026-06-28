@@ -120,9 +120,12 @@ html, body {
 }
 
 .toolbar-center {
-    flex: 1;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     text-align: center;
     overflow: hidden;
+    max-width: calc(100% - 300px);
 }
 
 .file-name {
@@ -548,8 +551,8 @@ input[type="range"]:disabled::-webkit-slider-thumb {
 
 /* ===== Thumbnail Bar ===== */
 .thumbnail-bar {
-    height: 88px;
-    min-height: 88px;
+    height: 94px;
+    min-height: 94px;
     background: var(--bg-tertiary);
     border-top: 1px solid var(--border-default);
     overflow: hidden;
@@ -563,11 +566,10 @@ input[type="range"]:disabled::-webkit-slider-thumb {
 .thumbnail-list {
     display: flex;
     gap: 4px;
-    padding: 4px 8px;
+    padding: 4px 8px 10px;
     height: 100%;
     overflow-x: auto;
     overflow-y: hidden;
-    scroll-behavior: smooth;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
     position: relative;
