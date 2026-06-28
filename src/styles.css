@@ -743,8 +743,8 @@ input[type="range"]:disabled::-webkit-slider-thumb {
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-dialog);
-    min-width: 360px;
-    max-width: 480px;
+    min-width: 300px;
+    max-width: 400px;
     animation: dialogSlideIn 0.2s ease;
 }
 
@@ -757,7 +757,7 @@ input[type="range"]:disabled::-webkit-slider-thumb {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border-default);
 }
 
@@ -767,14 +767,14 @@ input[type="range"]:disabled::-webkit-slider-thumb {
 }
 
 .dialog-content {
-    padding: 20px;
+    padding: 12px 16px;
 }
 
 .dialog-footer {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    padding: 12px 20px;
+    padding: 10px 16px;
     border-top: 1px solid var(--border-default);
 }
 
@@ -831,7 +831,7 @@ input[type="range"]:disabled::-webkit-slider-thumb {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 0;
+    padding: 8px 0;
     border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -842,7 +842,7 @@ input[type="range"]:disabled::-webkit-slider-thumb {
 .setting-info {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .setting-label {

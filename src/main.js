@@ -463,7 +463,7 @@ async function showVideo(metadata) {
     elements.videoTotalTime.textContent = '00:00:00';
     updatePlayPauseIcon();
 
-    elements.videoPlayer.src = convertFileSrc(metadata.file_path.replace(/\\/g, '/'));
+    elements.videoPlayer.src = convertFileSrc(metadata.file_path);
     elements.videoPlayer.load();
 }
 
@@ -1065,13 +1065,16 @@ function updateThumbnailSelection() {
 function updateToolbarState(loaded) {
     const buttons = [
         elements.btnSaveAs, elements.btnCopy, elements.btnRotate,
-        elements.btnDelete, elements.btnMore, elements.btnFileInfo,
+        elements.btnDelete, elements.btnFileInfo,
         elements.btnRotateBottom, elements.btnFitToWindow,
         elements.btnActualSize, elements.btnZoomDropdown,
         elements.btnZoomOut, elements.btnZoomIn,
     ];
     buttons.forEach(btn => btn.disabled = !loaded);
     elements.zoomSlider.disabled = !loaded;
+
+    // btnMore and settings should always be accessible
+    elements.btnMore.disabled = false;
 }
 
 // ===== Toggle Functions =====
