@@ -166,6 +166,11 @@ async function init() {
     setupKeyboard();
     await setupFileWatcher();
     updateMaximizeIcon();
+
+    // Open file passed via command-line args (e.g. from "Open with")
+    await listen('open-file-from-arg', async (event) => {
+        await loadImage(event.payload);
+    });
 }
 
 // ===== Settings =====

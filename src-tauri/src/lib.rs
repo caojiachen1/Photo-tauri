@@ -4,8 +4,10 @@ mod file_ops;
 mod file_watcher;
 mod thumbnail;
 mod settings;
+mod shell_integration;
 
 use tauri::Manager;
+use tauri::Emitter;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -30,6 +32,26 @@ pub fn run() {
                 playback_history: Arc::new(Mutex::new(std::collections::HashMap::new())),
             };
             app.manage(state);
+
+            // Register as "Open with" handler in Windows Explorer
+            if let Some(exe_path) = std::env::current_exe().ok() {
+                shell_integration::register_open_with(&exe_path);
+            }
+
+            // Check command-line args for a file path to open
+            let args: Vec<String> = std::env::args().skip(1).collect();
+            if let Some(file_path) = args.first() {
+                let path = std::path::Path::new(file_path);
+                if path.exists() {
+                    let handle = app.handle().clone();
+                    let fp = file_path.clone();
+                    tauri::async_runtime::spawn(async move {
+                        // Wait for window to be ready
+                        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                        let _ = handle.emit("open-file-from-arg", fp);
+                    });
+                }
+            }
 
             Ok(())
         })
