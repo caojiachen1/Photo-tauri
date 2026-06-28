@@ -2845,6 +2845,7 @@ dependencies = [
  "image",
  "kamadak-exif",
  "notify",
+ "raw-window-handle",
  "serde",
  "serde_json",
  "tauri",
@@ -2855,6 +2856,7 @@ dependencies = [
  "tauri-plugin-shell",
  "tokio",
  "trash",
+ "windows-sys 0.59.0",
  "winreg",
 ]
 

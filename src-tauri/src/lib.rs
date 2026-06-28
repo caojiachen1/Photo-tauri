@@ -11,6 +11,9 @@ use tauri::Emitter;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+#[cfg(target_os = "windows")]
+mod win_hit_test;
+
 pub struct AppState {
     pub watcher: Arc<Mutex<Option<file_watcher::FileWatcher>>>,
     pub settings: Arc<Mutex<settings::AppSettings>>,
@@ -36,6 +39,14 @@ pub fn run() {
             // Register as "Open with" handler in Windows Explorer
             if let Some(exe_path) = std::env::current_exe().ok() {
                 shell_integration::register_open_with(&exe_path);
+            }
+
+            // Fix WM_NCHITTEST for frameless maximized window (top-edge drag cursor)
+            #[cfg(target_os = "windows")]
+            {
+                if let Some(window) = app.get_webview_window("main") {
+                    win_hit_test::install_hit_test_subclass(&window);
+                }
             }
 
             // Check command-line args for a file path to open
