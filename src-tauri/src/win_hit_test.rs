@@ -1,7 +1,7 @@
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use std::collections::HashMap;
 use std::sync::LazyLock;
-use std::sync::atomic::{AtomicIsize, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicIsize, Ordering};
 use std::sync::Mutex;
 use tauri::WebviewWindow;
 use windows_sys::Win32::Foundation::*;
@@ -13,7 +13,6 @@ const WINDOW_CONTROLS_WIDTH: i32 = 138;
 static ORIGINAL_PROCS: LazyLock<Mutex<HashMap<usize, isize>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 static PARENT_HWND: AtomicIsize = AtomicIsize::new(0);
-static DEBUG_HIT_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 /// Install a hit-test subclass on the top-level window only.
 pub fn install_hit_test_subclass(window: &WebviewWindow) {
@@ -23,7 +22,6 @@ pub fn install_hit_test_subclass(window: &WebviewWindow) {
     };
 
     PARENT_HWND.store(hwnd as isize, Ordering::SeqCst);
-    eprintln!("[hit-test] install parent={hwnd:p}");
     subclass_hwnd(hwnd);
 
     let mut children: Vec<HWND> = Vec::new();
@@ -34,7 +32,6 @@ pub fn install_hit_test_subclass(window: &WebviewWindow) {
     for &child in &children {
         subclass_hwnd(child);
     }
-    eprintln!("[hit-test] installed children={}", children.len());
 }
 
 fn subclass_hwnd(hwnd: HWND) {
@@ -50,7 +47,6 @@ fn subclass_hwnd(hwnd: HWND) {
         if let Ok(mut map) = ORIGINAL_PROCS.lock() {
             map.entry(hwnd as usize).or_insert(prev);
         }
-        eprintln!("[hit-test] subclass hwnd={hwnd:p}");
     }
 }
 
@@ -126,13 +122,6 @@ unsafe extern "system" fn custom_wndproc(
                     && x < rect.right
                     && y >= rect.top
                     && y < rect.top + TITLEBAR_HEIGHT;
-
-            if in_window_controls && DEBUG_HIT_COUNT.fetch_add(1, Ordering::Relaxed) < 80 {
-                eprintln!(
-                    "[hit-test] controls hwnd={hwnd:p} result={} x={} y={} rect=({}, {}, {}, {})",
-                    default_result, x, y, rect.left, rect.top, rect.right, rect.bottom
-                );
-            }
 
             match default_result as u32 {
                 HTTOP | HTTOPLEFT | HTTOPRIGHT | HTLEFT | HTRIGHT

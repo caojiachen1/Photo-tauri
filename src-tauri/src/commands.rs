@@ -202,7 +202,6 @@ pub fn refresh_hit_test_subclass(app: AppHandle) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
         if let Some(window) = app.get_webview_window("main") {
-            eprintln!("[hit-test] refresh requested from frontend");
             crate::win_hit_test::install_hit_test_subclass(&window);
         }
     }
@@ -212,21 +211,15 @@ pub fn refresh_hit_test_subclass(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub fn frontend_ready(app: AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
-        eprintln!("[startup] frontend ready; applying first-show window sequence");
-
         #[cfg(target_os = "windows")]
         crate::win_hit_test::install_hit_test_subclass(&window);
 
-        eprintln!("[startup] maximize");
         window.maximize().map_err(|e| e.to_string())?;
 
         #[cfg(target_os = "windows")]
         crate::win_hit_test::install_hit_test_subclass(&window);
 
-        eprintln!("[startup] show");
         window.show().map_err(|e| e.to_string())?;
-
-        eprintln!("[startup] focus");
         window.set_focus().map_err(|e| e.to_string())?;
 
         #[cfg(target_os = "windows")]
@@ -235,7 +228,6 @@ pub fn frontend_ready(app: AppHandle) -> Result<(), String> {
             tauri::async_runtime::spawn(async move {
                 for delay_ms in [100_u64, 300, 800, 1600] {
                     tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
-                    eprintln!("[startup] delayed hit-test refresh after {delay_ms}ms");
                     crate::win_hit_test::install_hit_test_subclass(&window);
                 }
             });

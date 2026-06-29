@@ -1214,12 +1214,11 @@ function scheduleHitTestRefresh() {
 
 async function notifyFrontendReady() {
     try {
-        console.log('[startup] notifying backend frontend is ready');
         await invoke('frontend_ready');
         scheduleHitTestRefresh();
         await updateMaximizeIcon();
     } catch (e) {
-        console.error('[startup] failed to show initial window', e);
+        console.error('Failed to show initial window', e);
     }
 }
 
