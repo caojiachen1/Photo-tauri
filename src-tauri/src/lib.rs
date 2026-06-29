@@ -41,14 +41,6 @@ pub fn run() {
                 shell_integration::register_open_with(&exe_path);
             }
 
-            // Fix WM_NCHITTEST for frameless maximized window (top-edge drag cursor)
-            #[cfg(target_os = "windows")]
-            {
-                if let Some(window) = app.get_webview_window("main") {
-                    win_hit_test::install_hit_test_subclass(&window);
-                }
-            }
-
             // Check command-line args for a file path to open
             let args: Vec<String> = std::env::args().skip(1).collect();
             if let Some(file_path) = args.first() {
@@ -86,6 +78,8 @@ pub fn run() {
             commands::open_file_dialog,
             commands::save_file_dialog,
             commands::confirm_dialog,
+            commands::refresh_hit_test_subclass,
+            commands::frontend_ready,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

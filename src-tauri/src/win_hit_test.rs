@@ -1,40 +1,31 @@
-/// Windows WM_NCHITTEST subclass for frameless maximized windows.
-///
-/// When a Tauri window uses `decorations: false`, Windows still manages an
-/// invisible resize border via WS_THICKFRAME. At the top edge of a maximized
-/// window, WM_NCHITTEST returns resize/caption hit-test values, causing the
-/// OS to display a drag cursor.
-///
-/// The fix subclasses BOTH the main window AND all its child windows (including
-/// WebView2), because the WebView2 child covers the entire parent and intercepts
-/// WM_NCHITTEST before it reaches the parent's wndproc.
-
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicIsize, Ordering};
+use std::sync::LazyLock;
+use std::sync::atomic::{AtomicIsize, AtomicUsize, Ordering};
 use std::sync::Mutex;
 use tauri::WebviewWindow;
 use windows_sys::Win32::Foundation::*;
 use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
-// Original wndprocs keyed by HWND (as usize)
-static ORIGINAL_PROCS: Mutex<Option<HashMap<usize, isize>>> = Mutex::new(None);
-static PARENT_HWND: AtomicIsize = AtomicIsize::new(0);
+const TITLEBAR_HEIGHT: i32 = 48;
+const WINDOW_CONTROLS_WIDTH: i32 = 138;
 
-/// Install the WM_NCHITTEST subclass on the given Tauri window and all children.
+static ORIGINAL_PROCS: LazyLock<Mutex<HashMap<usize, isize>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+static PARENT_HWND: AtomicIsize = AtomicIsize::new(0);
+static DEBUG_HIT_COUNT: AtomicUsize = AtomicUsize::new(0);
+
+/// Install a hit-test subclass on the top-level window only.
 pub fn install_hit_test_subclass(window: &WebviewWindow) {
     let hwnd = match get_hwnd(window) {
         Some(h) => h,
         None => return,
     };
 
-    *ORIGINAL_PROCS.lock().unwrap() = Some(HashMap::new());
     PARENT_HWND.store(hwnd as isize, Ordering::SeqCst);
-
-    // Subclass the parent window
+    eprintln!("[hit-test] install parent={hwnd:p}");
     subclass_hwnd(hwnd);
 
-    // Enumerate and subclass all child windows (WebView2 etc.)
     let mut children: Vec<HWND> = Vec::new();
     let children_ptr = &mut children as *mut Vec<HWND> as LPARAM;
     unsafe {
@@ -43,25 +34,30 @@ pub fn install_hit_test_subclass(window: &WebviewWindow) {
     for &child in &children {
         subclass_hwnd(child);
     }
+    eprintln!("[hit-test] installed children={}", children.len());
 }
 
 fn subclass_hwnd(hwnd: HWND) {
+    let current = unsafe { GetWindowLongPtrW(hwnd, GWLP_WNDPROC) };
+    if current == custom_wndproc as *const () as isize {
+        return;
+    }
+
     let prev = unsafe {
         SetWindowLongPtrW(hwnd, GWLP_WNDPROC, custom_wndproc as *const () as isize)
     };
     if prev != 0 {
         if let Ok(mut map) = ORIGINAL_PROCS.lock() {
-            if let Some(ref mut m) = *map {
-                m.insert(hwnd as usize, prev);
-            }
+            map.entry(hwnd as usize).or_insert(prev);
         }
+        eprintln!("[hit-test] subclass hwnd={hwnd:p}");
     }
 }
 
 unsafe extern "system" fn enum_child_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
     let children = &mut *(lparam as *mut Vec<HWND>);
     children.push(hwnd);
-    1 // continue enumeration
+    1
 }
 
 fn get_hwnd(window: &WebviewWindow) -> Option<HWND> {
@@ -85,9 +81,7 @@ fn is_parent_maximized() -> bool {
 
 fn get_original_proc(hwnd: HWND) -> isize {
     if let Ok(map) = ORIGINAL_PROCS.lock() {
-        if let Some(ref m) = *map {
-            return m.get(&(hwnd as usize)).copied().unwrap_or(0);
-        }
+        return map.get(&(hwnd as usize)).copied().unwrap_or(0);
     }
     0
 }
@@ -99,7 +93,10 @@ fn call_original(original: isize, hwnd: HWND, msg: u32, wparam: WPARAM, lparam: 
         unsafe {
             CallWindowProcW(
                 Some(std::mem::transmute::<isize, WndProcFn>(original)),
-                hwnd, msg, wparam, lparam,
+                hwnd,
+                msg,
+                wparam,
+                lparam,
             )
         }
     } else {
@@ -119,11 +116,28 @@ unsafe extern "system" fn custom_wndproc(
         let default_result = call_original(original, hwnd, msg, wparam, lparam);
 
         if is_parent_maximized() {
+            let x = (lparam as i16) as i32;
+            let y = ((lparam >> 16) as i16) as i32;
+            let mut rect: RECT = std::mem::zeroed();
+            GetWindowRect(hwnd, &mut rect);
+
+            let in_window_controls =
+                x >= rect.right - WINDOW_CONTROLS_WIDTH
+                    && x < rect.right
+                    && y >= rect.top
+                    && y < rect.top + TITLEBAR_HEIGHT;
+
+            if in_window_controls && DEBUG_HIT_COUNT.fetch_add(1, Ordering::Relaxed) < 80 {
+                eprintln!(
+                    "[hit-test] controls hwnd={hwnd:p} result={} x={} y={} rect=({}, {}, {}, {})",
+                    default_result, x, y, rect.left, rect.top, rect.right, rect.bottom
+                );
+            }
+
             match default_result as u32 {
                 HTTOP | HTTOPLEFT | HTTOPRIGHT | HTLEFT | HTRIGHT
-                | HTBOTTOM | HTBOTTOMLEFT | HTBOTTOMRIGHT | HTCAPTION => {
-                    return HTCLIENT as LRESULT;
-                }
+                | HTBOTTOM | HTBOTTOMLEFT | HTBOTTOMRIGHT => return HTCLIENT as LRESULT,
+                HTCAPTION if in_window_controls => return HTCLIENT as LRESULT,
                 _ => return default_result,
             }
         }

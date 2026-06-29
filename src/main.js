@@ -166,6 +166,7 @@ async function init() {
     setupKeyboard();
     await setupFileWatcher();
     updateMaximizeIcon();
+    await notifyFrontendReady();
 
     // Open file passed via command-line args (e.g. from "Open with")
     await listen('open-file-from-arg', async (event) => {
@@ -1185,6 +1186,7 @@ async function handleToggleMaximize() {
     } else {
         await appWindow.maximize();
     }
+    await invoke('refresh_hit_test_subclass');
     updateMaximizeIcon();
 }
 
@@ -1196,9 +1198,29 @@ async function handleClose() {
 async function updateMaximizeIcon() {
     const appWindow = getCurrentWindow();
     const isMaximized = await appWindow.isMaximized();
+    document.body.classList.toggle('maximized', isMaximized);
     elements.iconMaximize.classList.toggle('hidden', isMaximized);
     elements.iconRestore.classList.toggle('hidden', !isMaximized);
     elements.btnMaximize.title = isMaximized ? '还原' : '最大化';
+}
+
+function scheduleHitTestRefresh() {
+    [150, 500, 1500].forEach((delay) => {
+        setTimeout(() => {
+            invoke('refresh_hit_test_subclass').catch(() => {});
+        }, delay);
+    });
+}
+
+async function notifyFrontendReady() {
+    try {
+        console.log('[startup] notifying backend frontend is ready');
+        await invoke('frontend_ready');
+        scheduleHitTestRefresh();
+        await updateMaximizeIcon();
+    } catch (e) {
+        console.error('[startup] failed to show initial window', e);
+    }
 }
 
 // ===== File Operations =====
